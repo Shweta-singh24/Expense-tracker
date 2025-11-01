@@ -1,0 +1,38 @@
+# ========================
+# Node.js / Express Backend
+# ========================
+
+# Node modules folder (auto generated)
+node_modules/
+
+# Environment variables (contains secrets)
+.env
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor settings (optional)
+.vscode/
+.idea/
+
+# Build or dist folders (if you ever add build step)
+dist/
+build/
+
+# Temporary or cache files
+.tmp/
+.cache/
+
+# Coverage reports (if you add testing later)
+coverage/
+
+# npm package-lock (optional if you don’t want to commit it)
+# package-lock.json
