@@ -18,13 +18,20 @@ It allows users to register, log in, and manage their expenses — including fil
 ✅ Protected Routes (only logged-in users can access their data)
 
 # ⚙️Tech Stack
-Node.js	Backend ||
-Express.js||
-MongoDB + Mongoose	Database & ODM||
-JWT (jsonwebtoken)	Authentication||
-bcryptjs	Password hashing||
-dotenv	Environment variables||
-morgan	HTTP request logging||
+Node.js	Backend
+
+Express.js
+
+MongoDB + Mongoose	Database & ODM
+
+JWT (jsonwebtoken)	Authentication
+
+bcryptjs	Password hashing
+
+dotenv	Environment variables
+
+morgan	HTTP request logging
+
 cors	Cross-origin requests
 
 # 🔐API Endpoints
@@ -32,16 +39,22 @@ cors	Cross-origin requests
 Method ||	Endpoint ||	Description
 
 POST	/api/users/register	Register a new user
+
 POST	/api/users/login	Login and get JWT
 
 # 💸Expense Routes (Protected)
 Method ||	Endpoint ||	Description
 
 POST	/api/expenses	Create a new expense
+
 GET	/api/expenses	Get all expenses
+
 GET	/api/expenses/filter	Filter by date/month/category
+
 GET	/api/expenses/report	Get monthly report
+
 PUT	/api/expenses/:id	Update expense
+
 DELETE	/api/expenses/:id	Delete expense
 
 # 🧑‍💻Development Scripts
