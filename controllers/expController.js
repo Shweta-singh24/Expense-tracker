@@ -1,7 +1,5 @@
 import Exp from "../models/exp.js";
 //CREATE
-import Exp from "../models/exp.js";
-
 export const createExp = async (req, res) => {
   try {
     const receiptUrl = req.file ? req.file.path : null;
