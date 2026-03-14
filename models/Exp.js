@@ -29,13 +29,16 @@ const expSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    receipt: {
+      type: String,
+    },
   },
   {
     timestamps: true,
   }
 );
 
-// ✅ Mongoose model banaya
+
 const exp = mongoose.model("exp", expSchema);
 
 export default exp ;

@@ -11,7 +11,7 @@ import {
 
 const router = express.Router();
 
-router.post("/", authMiddleware, createExp);
+router.post("/", authMiddleware, upload.single("receipt"), createExp);
 router.get("/", authMiddleware, getExps);
 router.get("/filter", authMiddleware, filterExp);
 router.get("/report", authMiddleware, monthlyReport);

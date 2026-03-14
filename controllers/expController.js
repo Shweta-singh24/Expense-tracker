@@ -1,8 +1,17 @@
 import Exp from "../models/exp.js";
 //CREATE
+import Exp from "../models/exp.js";
+
 export const createExp = async (req, res) => {
   try {
-    const newExp = await Exp.create(req.body);
+    const receiptUrl = req.file ? req.file.path : null;
+
+    const newExp = await Exp.create({
+      ...req.body,
+      owner: req.user._id,
+      receipt: receiptUrl,
+    });
+
     res.status(201).json(newExp);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -67,7 +76,7 @@ export const monthlyReport = async (req, res) => {
     const result = await Exp.aggregate([
       {
         $match: {
-          owner: req.user._id, // 🔥 this is where $match goes
+          owner: req.user._id, // 🔥 this is where $match 
           date: { $gte: start, $lt: end },
         },
       },
