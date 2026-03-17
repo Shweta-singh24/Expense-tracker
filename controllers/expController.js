@@ -1,16 +1,23 @@
 import Exp from "../models/exp.js";
 import cloudinary from "../config/cloudinary.js";
 import fs from "fs";
-// Create
+
+// CREATE
 export const createExp = async (req, res) => {
   try {
+    const { amount, category } = req.body;
+
+    // validation
+    if (!amount || !category) {
+      return res.status(400).json({ message: "Amount and category are required" });
+    }
+
     let receiptUrl = null;
 
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path);
       receiptUrl = result.secure_url;
 
-      // local file delete (important)
       fs.unlinkSync(req.file.path);
     }
 
@@ -26,35 +33,67 @@ export const createExp = async (req, res) => {
   }
 };
 
-// READ
+// READ 
 export const getExps = async (req, res) => {
-  const exps = await Exp.find();
-  res.json(exps);
+  try {
+    const exps = await Exp.find({ owner: req.user._id });
+    res.json(exps);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 // UPDATE
 export const updateExp = async (req, res) => {
-  const exp = await Exp.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  res.json(exp);
+  try {
+    const exp = await Exp.findOneAndUpdate(
+      { _id: req.params.id, owner: req.user._id },
+      req.body,
+      { new: true }
+    );
+
+    if (!exp) {
+      return res.status(404).json({ message: "Expense not found" });
+    }
+
+    res.json(exp);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
-// DELETE
+// DELETE 
 export const deleteExp = async (req, res) => {
-  await Exp.findByIdAndDelete(req.params.id);
-  res.json({ message: "Exp deleted successfully" });
+  try {
+    const exp = await Exp.findOneAndDelete({
+      _id: req.params.id,
+      owner: req.user._id,
+    });
+
+    if (!exp) {
+      return res.status(404).json({ message: "Expense not found" });
+    }
+
+    res.json({ message: "Expense deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
-//filter 
+// FILTER
 export const filterExp = async (req, res) => {
   try {
     const filter = { owner: req.user._id };
 
-    if (req.query.category) filter.category = req.query.category;
+    if (req.query.category) {
+      filter.category = req.query.category;
+    }
 
     if (req.query.date) {
       const date = new Date(req.query.date);
       const nextDate = new Date(date);
       nextDate.setDate(date.getDate() + 1);
+
       filter.date = { $gte: date, $lt: nextDate };
     }
 
@@ -62,43 +101,12 @@ export const filterExp = async (req, res) => {
       const start = new Date(`${req.query.year}-${req.query.month}-01`);
       const end = new Date(start);
       end.setMonth(start.getMonth() + 1);
+
       filter.date = { $gte: start, $lt: end };
     }
 
     const expenses = await Exp.find(filter);
     res.json(expenses);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-
-//monthlyReport
-export const monthlyReport = async (req, res) => {
-  try {
-    const { month, year } = req.query;
-    const start = new Date(`${year}-${month}-01`);
-    const end = new Date(start);
-    end.setMonth(start.getMonth() + 1);
-
-    const result = await Exp.aggregate([
-      {
-        $match: {
-          owner: req.user._id, // 🔥 this is where $match 
-          date: { $gte: start, $lt: end },
-        },
-      },
-      {
-        $group: {
-          _id: "$category",
-          totalSpent: { $sum: "$amount" },
-        },
-      },
-    ]);
-
-    const totalSpent = result.reduce((sum, cat) => sum + cat.totalSpent, 0);
-
-    res.json({ month, totalSpent, categoryBreakdown: result });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
