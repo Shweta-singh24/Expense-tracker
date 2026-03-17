@@ -1,8 +1,18 @@
 import Exp from "../models/exp.js";
-//CREATE
+import cloudinary from "../config/cloudinary.js";
+import fs from "fs";
+// Create
 export const createExp = async (req, res) => {
   try {
-    const receiptUrl = req.file ? req.file.path : null;
+    let receiptUrl = null;
+
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path);
+      receiptUrl = result.secure_url;
+
+      // local file delete (important)
+      fs.unlinkSync(req.file.path);
+    }
 
     const newExp = await Exp.create({
       ...req.body,
