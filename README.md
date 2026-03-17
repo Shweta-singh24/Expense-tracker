@@ -1,63 +1,164 @@
-# 💰Expense Tracker API
+📌 Expense Tracker App
 
-A RESTful Expense Tracker Backend built with Node.js, Express, MongoDB (Mongoose), and JWT Authentication.
-It allows users to register, log in, and manage their expenses — including filtering, monthly reports, and category breakdowns.
+A full-stack Expense Tracker application that allows users to manage their daily expenses efficiently with secure authentication and file upload support.
 
-# 🚀 Features
+🚀 Features
 
-✅ User Authentication (JWT)
+🔐 User Authentication (JWT आधारित login/signup)
 
-✅ Create, Read, Update, Delete (CRUD) Expenses
+💰 Add, update, delete expenses (CRUD operations)
 
-✅ Filter by date, month, or category
+📊 Monthly expense report
 
-✅ Generate Monthly Spending Reports
+📎 Receipt upload (Cloudinary integration)
 
-✅ Passwords securely hashed with bcrypt
+🧾 Category-wise expense tracking
 
-✅ Protected Routes (only logged-in users can access their data)
+🔒 Secure password hashing using bcrypt
 
-# ⚙️Tech Stack
-Node.js	Backend
+🛠️ Tech Stack
 
+Backend:
+Node.js
 Express.js
+MongoDB (Mongoose)
+JWT Authentication
+Bcrypt (Password hashing)
+Multer (File handling)
+Cloudinary (Cloud storage)
+Frontend:
+React.js
+Tailwind CSS
 
-MongoDB + Mongoose	Database & ODM
+📂 Project Structure
 
-JWT (jsonwebtoken)	Authentication
+backend/
+ ├── config/
+ ├── controllers/
+ ├── models/
+ ├── routes/
+ ├── middleware/
+ ├── utils/
+ └── server.js
 
-bcryptjs	Password hashing
 
-dotenv	Environment variables
 
-morgan	HTTP request logging
+📡 API Endpoints
 
-cors	Cross-origin requests
 
-# 🔐API Endpoints
-👤 Auth Routes
-Method ||	Endpoint ||	Description
+🔐 Auth Routes
 
-POST	/api/users/register	Register a new user
 
-POST	/api/users/login	Login and get JWT
+POST /api/auth/signup
+POST /api/auth/login
 
-# 💸Expense Routes (Protected)
-Method ||	Endpoint ||	Description
+💰 Expense Routes
 
-POST	/api/expenses	Create a new expense
+GET    /api/expenses       → Get all expenses
+POST   /api/expenses       → Create expense (with file upload)
+PUT    /api/expenses/:id   → Update expense
+DELETE /api/expenses/:id   → Delete expense
 
-GET	/api/expenses	Get all expenses
 
-GET	/api/expenses/filter	Filter by date/month/category
 
-GET	/api/expenses/report	Get monthly report
 
-PUT	/api/expenses/:id	Update expense
+📊 Reports
 
-DELETE	/api/expenses/:id	Delete expense
 
-# 🧑‍💻Development Scripts
-npm run dev	Run with nodemon (development)
+GET /api/expenses/monthly?month=MM&year=YYYY
 
-npm start	Run normally (production)
+
+
+
+📎 File Upload
+
+
+
+
+Uses Multer for handling files
+
+
+Uploads receipts to Cloudinary
+
+
+Stores secure URL in database
+
+
+
+
+
+🔐 Authentication Flow
+
+
+
+
+User signup/login
+
+
+JWT token generated
+
+
+Token sent in headers:
+
+
+
+
+Authorization: Bearer <token>
+
+
+
+
+
+Protected routes verify token
+
+
+
+
+
+🧪 Testing
+
+
+Use Postman:
+
+
+
+
+Select form-data for file upload
+
+
+Add fields:
+
+
+
+receipt → File
+
+
+other fields → Text
+
+
+
+
+💡 Future Improvements
+
+
+
+
+📊 Graphs & analytics dashboard
+
+
+🔍 Search & filter
+
+
+📱 Responsive UI improvements
+
+
+💳 Payment integration
+
+
+
+
+
+👩‍💻 Author
+
+Shweta Singh
+📧 shwetasingh02415@gmail.com
