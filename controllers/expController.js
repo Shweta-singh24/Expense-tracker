@@ -1,5 +1,5 @@
 import Exp from "../models/exp.js";
-import cloudinary from "../config/cloudinary.js";
+import cloudinary from "../utils/cloudinary.js";
 import fs from "fs";
 
 // CREATE
@@ -107,6 +107,35 @@ export const filterExp = async (req, res) => {
 
     const expenses = await Exp.find(filter);
     res.json(expenses);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const monthlyReport = async (req, res) => {
+  try {
+    const { month, year } = req.query;
+
+    const start = new Date(`${year}-${month}-01`);
+    const end = new Date(start);
+    end.setMonth(start.getMonth() + 1);
+
+    const report = await Exp.aggregate([
+      {
+        $match: {
+          owner: req.user._id,
+          date: { $gte: start, $lt: end }
+        }
+      },
+      {
+        $group: {
+          _id: "$category",
+          totalSpent: { $sum: "$amount" }
+        }
+      }
+    ]);
+
+    res.json(report);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
