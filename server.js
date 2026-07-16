@@ -5,6 +5,8 @@ import cors from "cors";
 import morgan from "morgan";
 import authRoutes from "./routes/authRoutes.js"
 import expRoutes from "./routes/expRoutes.js";
+import swaggerUi from "swagger-ui-express";
+import swaggerSpec from "./config/swagger.js";
 dotenv.config();
 const app = express();
 
@@ -14,6 +16,7 @@ app.use(cors());
 app.use(morgan("dev"));
 
 // Routes
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/auth", authRoutes);
 app.use("/api/expenses", expRoutes);
 

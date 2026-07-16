@@ -9,7 +9,39 @@ const handleValidation = (req, res, next) => {
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
   next();
 };
-
+/**
+ * @swagger
+ * /api/auth/signup:
+ *   post:
+ *     summary: Register a new user
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Shweta
+ *               email:
+ *                 type: string
+ *                 example: shweta@gmail.com
+ *               password:
+ *                 type: string
+ *                 example: Password@123
+ *     responses:
+ *       201:
+ *         description: User registered successfully
+ *       400:
+ *         description: Validation error
+ */
 router.post(
   "/signup",
   [
@@ -21,7 +53,35 @@ router.post(
   signup
 );
 
-
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Login user
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: shweta@gmail.com
+ *               password:
+ *                 type: string
+ *                 example: Password@123
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       401:
+ *         description: Invalid credentials
+ */
 router.post(
   "/login",
   [
@@ -33,7 +93,31 @@ router.post(
 );
 
 // refresh and logout
+/**
+ * @swagger
+ * /api/auth/refresh:
+ *   post:
+ *     summary: Generate a new access token using refresh token
+ *     tags:
+ *       - Authentication
+ *     responses:
+ *       200:
+ *         description: Access token generated successfully
+ *       401:
+ *         description: Invalid refresh token
+ */
 router.post("/refresh", refreshTokenHandler);
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout user
+ *     tags:
+ *       - Authentication
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ */
 router.post("/logout", logout);
 
 export default router;
