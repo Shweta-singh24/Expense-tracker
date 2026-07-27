@@ -1,132 +1,106 @@
-import bcrypt from "bcrypt";
-import User from "../models/User.js";
-import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../utils/jwt.js";
+import { validationResult } from "express-validator";
+import { successResponse, errorResponse } from "../utils/apiResponse.js";
+import {
+  registerService,
+  loginService,
+  logoutService,
+  forgotPasswordService,
+  resetPasswordService,
+  verifyEmailService,
+  refreshTokenService,
+} from "../services/authService.js";
 
-const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS) || 10;
+// Inline validation handler — reused across all controllers
+const validate = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    errorResponse(res, 422, "Validation failed", errors.array());
+    return false;
+  }
+  return true;
+};
 
-export async function signup(req, res) {
+// POST /api/auth/register
+export const register = async (req, res) => {
+  if (!validate(req, res)) return;
   try {
-    const { name, email, password } = req.body;
-    if (!name || !email || !password) return res.status(400).json({ message: "Missing fields" });
-
-    const existing = await User.findOne({ email: email.toLowerCase() });
-    if (existing) return res.status(409).json({ message: "Email already in use" });
-
-    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-    const user = await User.create({ name, email: email.toLowerCase(), passwordHash });
-
-    // create tokens
-    const accessToken = signAccessToken({ userId: user._id });
-    const refreshToken = signRefreshToken({ userId: user._id });
-
-    // store refresh token (optional) — keep an array on user
-    user.refreshTokens = user.refreshTokens || [];
-    user.refreshTokens.push(refreshToken);
-    await user.save();
-
-    return res.status(201).json({
-      user: { id: user._id, name: user.name, email: user.email },
-      accessToken,
-      refreshToken,
+    const result = await registerService(req.body);
+    return successResponse(res, 201, result.message, {
+      orgId: result.orgId,
+      userId: result.userId,
+      // Only present in development — use this token to call GET /api/auth/verify-email/:token
+      ...(result.devVerificationToken && { devVerificationToken: result.devVerificationToken }),
     });
   } catch (err) {
-    console.error("Signup error:", err);
-    return res.status(500).json({ message: "Server error on signup" });
+    return errorResponse(res, err.status || 500, err.message || "Registration failed");
   }
-}
+};
 
-export async function login(req, res) {
+// POST /api/auth/login
+export const login = async (req, res) => {
+  if (!validate(req, res)) return;
   try {
-    const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ message: "Missing fields" });
+    const data = await loginService(req.body, res);
+    return successResponse(res, 200, "Login successful", data);
+  } catch (err) {
+    return errorResponse(res, err.status || 500, err.message || "Login failed");
+  }
+};
 
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) return res.status(401).json({ message: "Invalid credentials" });
+// POST /api/auth/logout
+export const logout = async (req, res) => {
+  try {
+    // Accept token from cookie or body
+    const token = req.cookies?.refreshToken || req.body?.refreshToken;
+    await logoutService(token, res);
+    return successResponse(res, 200, "Logged out successfully");
+  } catch (err) {
+    return errorResponse(res, 500, "Logout failed");
+  }
+};
 
-    const match = await bcrypt.compare(password, user.passwordHash);
-    if (!match) return res.status(401).json({ message: "Invalid credentials" });
-
-    const accessToken = signAccessToken({ userId: user._id });
-    const refreshToken = signRefreshToken({ userId: user._id });
-
-    // store refresh token
-    user.refreshTokens = user.refreshTokens || [];
-    user.refreshTokens.push(refreshToken);
-    await user.save();
-
-    return res.json({
-      user: { id: user._id, name: user.name, email: user.email },
-      accessToken,
-      refreshToken,
+// POST /api/auth/forgot-password
+export const forgotPassword = async (req, res) => {
+  if (!validate(req, res)) return;
+  try {
+    const result = await forgotPasswordService(req.body.email);
+    return successResponse(res, 200, "If that email exists, a reset link has been sent.", {
+      // Only present in development — use this token to call POST /api/auth/reset-password
+      ...(result?.devResetToken && { devResetToken: result.devResetToken }),
     });
   } catch (err) {
-    console.error("Login error:", err);
-    return res.status(500).json({ message: "Server error on login" });
+    return errorResponse(res, err.status || 500, err.message || "Request failed");
   }
-}
+};
 
-export async function refreshTokenHandler(req, res) {
+// POST /api/auth/reset-password
+export const resetPassword = async (req, res) => {
+  if (!validate(req, res)) return;
   try {
-    const { refreshToken } = req.body;
-    if (!refreshToken) return res.status(400).json({ message: "No refresh token provided" });
-
-    let payload;
-    try {
-      payload = verifyRefreshToken(refreshToken);
-    } catch (err) {
-      return res.status(401).json({ message: "Invalid refresh token" });
-    }
-
-    const user = await User.findById(payload.userId);
-    if (!user) return res.status(401).json({ message: "User not found" });
-
-    // check that this refresh token is stored for user
-    user.refreshTokens = user.refreshTokens || [];
-    if (!user.refreshTokens.includes(refreshToken)) {
-      return res.status(401).json({ message: "Refresh token not recognized" });
-    }
-
-    // all good -> sign new access token (and optionally new refresh token)
-    const newAccessToken = signAccessToken({ userId: user._id });
-    // (optionally rotate refresh tokens:)
-    const newRefreshToken = signRefreshToken({ userId: user._id });
-
-    // replace old refresh token with new one (rotate)
-    user.refreshTokens = user.refreshTokens.filter(t => t !== refreshToken);
-    user.refreshTokens.push(newRefreshToken);
-    await user.save();
-
-    return res.json({ accessToken: newAccessToken, refreshToken: newRefreshToken });
+    await resetPasswordService(req.body);
+    return successResponse(res, 200, "Password reset successfully. Please log in.");
   } catch (err) {
-    console.error("Refresh token error:", err);
-    return res.status(500).json({ message: "Server error on refresh" });
+    return errorResponse(res, err.status || 500, err.message || "Reset failed");
   }
-}
+};
 
-export async function logout(req, res) {
+// GET /api/auth/verify-email/:token
+export const verifyEmail = async (req, res) => {
   try {
-    const { refreshToken } = req.body;
-    if (!refreshToken) return res.status(400).json({ message: "Missing refresh token" });
-
-    // remove refresh token from user's stored tokens
-    // we expect refresh token contains userId if valid; safe to attempt decode
-    let payload;
-    try {
-      payload = verifyRefreshToken(refreshToken);
-    } catch (err) {
-      // token invalid or expired — still try to respond success to avoid info leak
-      return res.status(200).json({ message: "Logged out" });
-    }
-
-    const user = await User.findById(payload.userId);
-    if (user) {
-      user.refreshTokens = (user.refreshTokens || []).filter(t => t !== refreshToken);
-      await user.save();
-    }
-
-    return res.status(200).json({ message: "Logged out" });
+    await verifyEmailService(req.params.token);
+    return successResponse(res, 200, "Email verified successfully. You can now log in.");
   } catch (err) {
-    console.error("Logout error:", err);
-    return res.status(500).json({ message: "Server error on logout" });
+    return errorResponse(res, err.status || 500, err.message || "Verification failed");
   }
-}
+};
+
+// POST /api/auth/refresh-token
+export const refreshToken = async (req, res) => {
+  try {
+    const token = req.cookies?.refreshToken || req.body?.refreshToken;
+    const data = await refreshTokenService(token, res);
+    return successResponse(res, 200, "Token refreshed", data);
+  } catch (err) {
+    return errorResponse(res, err.status || 500, err.message || "Token refresh failed");
+  }
+};

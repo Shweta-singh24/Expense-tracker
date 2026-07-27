@@ -32,13 +32,6 @@ const expSchema = new mongoose.Schema(
     receipt: {
       type: String,
     },
-       resetPasswordToken: {
-      type: String,
-    },
-
-    resetPasswordExpire: {
-      type: Date,
-    },
   },
   {
     timestamps: true,

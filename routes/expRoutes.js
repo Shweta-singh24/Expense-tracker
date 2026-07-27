@@ -1,5 +1,5 @@
 import express from "express";
-import authMiddleware from "../middleware/authMiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
 import upload from "../middleware/uploadMiddleware.js";
 
 import {
@@ -64,7 +64,7 @@ const router = express.Router();
  *       401:
  *         description: Unauthorized
  */
-router.post("/", authMiddleware, upload.single("receipt"), createExp);
+router.post("/", protect, upload.single("receipt"), createExp);
 
 /**
  * @swagger
@@ -78,7 +78,7 @@ router.post("/", authMiddleware, upload.single("receipt"), createExp);
  *       200:
  *         description: List of expenses
  */
-router.get("/", authMiddleware, getExps);
+router.get("/", protect, getExps);
 
 /**
  * @swagger
@@ -114,7 +114,7 @@ router.get("/", authMiddleware, getExps);
  *       200:
  *         description: Filtered expenses
  */
-router.get("/filter", authMiddleware, filterExp);
+router.get("/filter", protect, filterExp);
 
 /**
  * @swagger
@@ -141,7 +141,7 @@ router.get("/filter", authMiddleware, filterExp);
  *       200:
  *         description: Monthly report generated successfully
  */
-router.get("/report", authMiddleware, monthlyReport);
+router.get("/report", protect, monthlyReport);
 
 /**
  * @swagger
@@ -179,7 +179,7 @@ router.get("/report", authMiddleware, monthlyReport);
  *       404:
  *         description: Expense not found
  */
-router.put("/:id", authMiddleware, updateExp);
+router.put("/:id", protect, updateExp);
 
 /**
  * @swagger
@@ -202,6 +202,6 @@ router.put("/:id", authMiddleware, updateExp);
  *       404:
  *         description: Expense not found
  */
-router.delete("/:id", authMiddleware, deleteExp);
+router.delete("/:id", protect, deleteExp);
 
 export default router;

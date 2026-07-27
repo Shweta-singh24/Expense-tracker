@@ -1,25 +1,16 @@
-import Exp from "../models/exp.js";
-import cloudinary from "../utils/cloudinary.js";
-import fs from "fs";
+import Exp from "../models/Exp.js";
 
 // CREATE
 export const createExp = async (req, res) => {
   try {
-    const { amount, category } = req.body;
+    const { title, amount, category } = req.body;
 
-    // validation
-    if (!amount || !category) {
-      return res.status(400).json({ message: "Amount and category are required" });
+    if (!title || !amount || !category) {
+      return res.status(400).json({ message: "Title, amount and category are required" });
     }
 
-    let receiptUrl = null;
-
-    if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path);
-      receiptUrl = result.secure_url;
-
-      fs.unlinkSync(req.file.path);
-    }
+    // CloudinaryStorage uploads directly — req.file.path is the secure URL
+    const receiptUrl = req.file ? req.file.path : null;
 
     const newExp = await Exp.create({
       ...req.body,
@@ -115,6 +106,10 @@ export const filterExp = async (req, res) => {
 export const monthlyReport = async (req, res) => {
   try {
     const { month, year } = req.query;
+
+    if (!month || !year) {
+      return res.status(400).json({ message: "month and year query params are required" });
+    }
 
     const start = new Date(`${year}-${month}-01`);
     const end = new Date(start);

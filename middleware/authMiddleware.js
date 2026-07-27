@@ -1,27 +1,44 @@
 import { verifyAccessToken } from "../utils/jwt.js";
+import { errorResponse } from "../utils/apiResponse.js";
 import User from "../models/User.js";
 
-export default async function authMiddleware(req, res, next) {
+/**
+ * Protect routes — verifies JWT access token.
+ * Attaches req.user on success.
+ */
+export const protect = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization || "";
     const token = authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
-    if (!token) return res.status(401).json({ message: "No token, authorization denied" });
+    if (!token) return errorResponse(res, 401, "No token, authorization denied");
 
     let decoded;
     try {
       decoded = verifyAccessToken(token);
-    } catch (err) {
-      return res.status(401).json({ message: "Invalid or expired token" });
+    } catch {
+      return errorResponse(res, 401, "Invalid or expired access token");
     }
 
-    // Attach minimal user info to req.user
-    const user = await User.findById(decoded.userId).select("-passwordHash -refreshTokens");
-    if (!user) return res.status(401).json({ message: "User not found" });
+    const user = await User.findById(decoded.userId).select("-passwordHash -refreshTokens").populate("organizationId");
+    if (!user) return errorResponse(res, 401, "User not found");
+    if (!user.isActive) return errorResponse(res, 403, "Account deactivated");
 
     req.user = user;
     next();
   } catch (err) {
-    console.error("Auth middleware error:", err);
-    return res.status(500).json({ message: "Server error in auth" });
+    return errorResponse(res, 500, "Server error in auth middleware");
   }
-}
+};
+
+/**
+ * Role-based authorization middleware.
+ * Usage: authorize("org_admin", "manager")
+ * @param {...string} roles
+ */
+export const authorize = (...roles) =>
+  (req, res, next) => {
+    if (!roles.includes(req.user?.role)) {
+      return errorResponse(res, 403, "You do not have permission to perform this action");
+    }
+    next();
+  };
