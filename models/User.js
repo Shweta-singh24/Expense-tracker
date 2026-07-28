@@ -38,21 +38,31 @@ const userSchema = new mongoose.Schema(
     designation: { type: String, trim: true, default: null },
     role: {
       type: String,
-      enum: ["org_admin", "manager", "employee"],
+      enum: ["super_admin", "org_admin", "manager", "employee"],
       default: "org_admin",
     },
 
     // ── Organization ──────────────────────────────────────────────────────
+    // Required for every role except super_admin, who is platform-level and
+    // not tied to a single tenant. Enforced in registerService/inviteService,
+    // not at the schema level, since super_admin docs omit it.
     organizationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Organization",
-      required: true,
+      default: null,
     },
 
+    // Who approves this user's expenses (feeds Approval Workflow module).
+    managerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+
     // ── Account Status ────────────────────────────────────────────────────
-    isActive: { type: Boolean, default: true },
+    status: { type: String, enum: ["active", "suspended", "invited"], default: "invited" },
+    isActive: { type: Boolean, default: true }, // kept for backward compatibility with existing auth checks
     isEmailVerified: { type: Boolean, default: false },
     acceptedTerms: { type: Boolean, default: false },
+    isTwoFactorEnabled: { type: Boolean, default: false },
+    failedLoginAttempts: { type: Number, default: 0 },
+    accountLocked: { type: Boolean, default: false },
 
     // ── Activity Tracking ─────────────────────────────────────────────────
     lastLogin: { type: Date, default: null },
@@ -72,6 +82,17 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+userSchema.index({ organizationId: 1, role: 1 });
+
+// Every role except super_admin must belong to an organization — this is
+// what makes tenant-scoped queries safe everywhere else in the codebase.
+userSchema.pre("validate", function (next) {
+  if (this.role !== "super_admin" && !this.organizationId) {
+    return next(new Error("organizationId is required for non-super_admin users"));
+  }
+  next();
+});
 
 // Generate a secure random token and return { rawToken, hashedToken }
 userSchema.statics.generateToken = function () {

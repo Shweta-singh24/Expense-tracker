@@ -72,3 +72,21 @@ export const sendPasswordResetEmail = async (toEmail, userName, token) => {
     `,
   });
 };
+
+/**
+ * Generic transactional email used by the Notification Center's background
+ * email worker for approvals, budget alerts, reimbursements, etc.
+ */
+export const sendGenericNotificationEmail = async (toEmail, userName, title, message) => {
+  await getTransporter().sendMail({
+    from: FROM(),
+    to: toEmail,
+    subject: title,
+    html: `
+      <h2>Hi, ${userName || "there"}</h2>
+      <p>${message}</p>
+      <hr />
+      <p style="color:#888;font-size:12px;">This is an automated notification from ExpenseFlow Enterprise.</p>
+    `,
+  });
+};
